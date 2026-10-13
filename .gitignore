@@ -1,0 +1,23 @@
+# build output
+/build/
+/dist/
+/ext/lib/*.jar
+
+# created at runtime / by setup (VINSTDIR=this directory)
+/conf/runtime.env
+/conf/kps/
+/conf/tmp/
+/conf/envSettings.props
+
+# local reverse-engineering workspace (regenerable) and deployed sample configuration
+/re/
+/runtime/
+
+# probe outputs
+/probes/*.txt
+
+# misc
+*.stackdump
+*.log
+.idea/
+.vscode/

@@ -1,0 +1,8 @@
+# Mock backend for the QuickStart "Heroes" REST service (routing filter: Connect to Heroes' REST Service)
+- url: http://heroes.org/productService/REST/GetProducts
+  method: GET
+  status: 200
+  headers:
+    Content-Type: application/json
+  body: |
+    [{"id": 1, "name": "Cape", "price": 10.5}, {"id": 2, "name": "Mask", "price": 4.0}]

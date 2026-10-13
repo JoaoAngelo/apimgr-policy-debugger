@@ -1,0 +1,20 @@
+<!--
+    apimgr-policy-debugger: runs apimgr-policy-debugger.Main inside the Axway vshell, so the policy engine
+    gets the product JRE, its JNI libraries and the standard classpath.
+-->
+<JavaProgram main="apd.Main">
+    <set property="headless" value="true"/>
+    <set property="running_jython"/>
+    <if property="apdHeap">
+        <set property="maxHeap" value="${apdHeap}"/>
+    </if>
+    <ifnot property="apdHeap">
+        <set property="maxHeap" value="1024m"/>
+    </ifnot>
+    <set property="initialHeap" value="256m"/>
+    <VMArg name="-XX:+UseSerialGC"/>
+    <VMArg name="-XX:TieredStopAtLevel=1"/>
+    <VMArg name="-Xshare:auto"/>
+    <!-- jvm.xml adds $VINSTDIR/ext/lib first on the classpath; the launcher sets VINSTDIR to the apimgr-policy-debugger home. -->
+    <include file="$VDISTDIR/system/conf/jvm.xml"/>
+</JavaProgram>

@@ -1,0 +1,42 @@
+#!/bin/sh
+# apimgr-policy-debugger launcher (Linux x86_64). Runs the debugger inside the Axway vshell.
+#   AXWAY_HOME  Axway runtime (default: conf/runtime.env from setup.sh, else /opt/axway/apigateway)
+#   APD_HEAP max heap (default 1024m)
+APD_HOME=$(cd "$(dirname "$0")/.." && pwd)
+# conf/runtime.env is written by bin/setup.sh (AXWAY_HOME=...)
+if [ -z "$AXWAY_HOME" ] && [ -f "$APD_HOME/conf/runtime.env" ]; then
+    . "$APD_HOME/conf/runtime.env"
+fi
+VDISTDIR=${AXWAY_HOME:-/opt/axway/apigateway}
+if [ ! -x "$VDISTDIR/platform/bin/vshell" ]; then
+    echo "apimgr-policy-debugger: Axway runtime not found at $VDISTDIR" >&2
+    echo "  run bin/setup.sh <your Axway apigateway dir or tar.gz>  (or set AXWAY_HOME)" >&2
+    exit 2
+fi
+
+# --real-routing maps mock hostnames to loopback addresses: run in a private mount
+# namespace with our own copy of /etc/hosts so the system file is never touched.
+# Skipped when not root or when the namespace is not permitted (e.g. unprivileged container).
+if [ -z "$APD_NS" ] && [ "$(id -u)" = 0 ] && command -v unshare >/dev/null 2>&1 \
+        && unshare -m true 2>/dev/null; then
+    hosts=$(mktemp /tmp/apimgr-policy-debugger-hosts.XXXXXX)
+    cp /etc/hosts "$hosts"
+    APD_NS=1 APD_HOSTS_FILE=$hosts unshare -m sh -c \
+        'mount --bind "$APD_HOSTS_FILE" /etc/hosts && exec sh "$0" "$@"' "$0" "$@"
+    rc=$?
+    rm -f "$hosts"
+    exit $rc
+fi
+export APD_HOSTS_FILE
+
+# jvm.xml puts $VINSTDIR/ext/lib on the classpath: the apimgr-policy-debugger acts as its own "instance" directory.
+VINSTDIR=$APD_HOME
+export APD_HOME VDISTDIR VINSTDIR
+
+. "$VDISTDIR/posix/lib/venv" "$VDISTDIR/posix/bin/apimgr-policy-debugger"
+# venv enables unlimited core dumps; a crashed JVM would leave multi-GB core files behind.
+ulimit -c 0
+LC_ALL=en_US.UTF-8
+export LC_ALL
+HEAP=${APD_HEAP:+-DapdHeap=$APD_HEAP}
+exec "$V_PLATFORM_BIN/vshell" -Dquiet $HEAP -N -e "$APD_HOME/conf/apimgr-policy-debugger.xml" "$@"

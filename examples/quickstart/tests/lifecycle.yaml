@@ -1,0 +1,92 @@
+# Lifecycle tests against the QuickStart configuration.
+# Run: apimgr-policy-debugger test examples/quickstart/tests --config <apigateway>/groups/<group>/conf/<config-id>
+#   (the QuickStart group configuration of an Axway 7.7 installation; heroes.org is answered by the mocks)
+
+- name: healthcheck path returns ok
+  request: { method: GET, path: /healthcheck }
+  expect:
+    outcome: pass
+    status: 200
+    bodyContains: "<status>ok</status>"
+    filters: [Set Message, Reflect]
+    faultHandler: false
+
+- name: heroes routes to backend and reflects its payload
+  request: { method: GET, path: /heroes, headers: { Accept: application/json } }
+  mocks:
+    - url: http://heroes.org/productService/REST/GetProducts
+      method: GET
+      headers: { Content-Type: application/json }
+      body: '[{"id":1,"name":"Cape"}]'
+  expect:
+    outcome: pass
+    status: 200
+    headers: { Content-Type: application/json }
+    bodyContains: '"Cape"'
+    filters: [Parse REST Operation, "Connect to Heroes*", Reflect Message]
+    backend:
+      - { method: GET, url: "heroes.org/productService/REST/GetProducts", count: 1 }
+    attributes:
+      filter.connect.to.url.result: SUCCESS
+
+# Finding: GetProducts ends with "Reflect Message", which resets the status to 200,
+# so a backend 503 reaches the client as 200 with the backend's body.
+- name: backend 503 is masked as 200 by Reflect Message
+  request: { method: GET, path: /heroes }
+  mocks:
+    - url: http://heroes.org/productService/REST/*
+      status: 503
+      body: maintenance
+  expect:
+    outcome: pass
+    status: 200
+    body: maintenance
+    filters: ["Connect to Heroes*", Reflect Message]
+
+- name: unreachable backend fails the path and runs the fault handler
+  request: { method: GET, path: /heroes }
+  expect:
+    outcome: fail
+    status: 500
+    faultHandler: true
+    attributes:
+      filter.connect.to.url.result: ERROR_CONNECTION_FAILED
+
+- name: backend timeout aborts with 504 classification
+  request: { method: GET, path: /heroes }
+  mocks:
+    - url: http://heroes.org/*
+      error: timeout
+  expect:
+    outcome: abort
+    faultHandler: true
+    attributes:
+      filter.connect.to.url.result: ERROR_TIMEOUT
+
+- name: forced abort in the first filter goes to the fault handler
+  request: { method: GET, path: /healthcheck }
+  force: ["Set Message=abort:simulated failure"]
+  expect:
+    outcome: abort
+    status: 500
+    faultHandler: true
+    notFilters: [Reflect]
+    attributes:
+      circuit.failure.reason: simulated failure
+
+- name: single policy run
+  policy: Health Check
+  request: { method: GET, path: /anything }
+  expect:
+    outcome: pass
+    status: 200
+    policies: [Health Check]
+
+- name: explicit chain (request + routing slots)
+  chain:
+    request: Health Check
+    routing: Health Check LB
+  request: { method: GET, path: /x }
+  expect:
+    outcome: pass
+    policies: [Health Check, Health Check LB]
