@@ -1,7 +1,8 @@
 name: release
 
 # Push a tag vX.Y.Z (matching VERSION in src/apd/Main.java) to publish a GitHub release with
-# apimgr-policy-debugger-X.Y.Z.tar.gz, .zip and SHA256SUMS.
+# apimgr-policy-debugger-X.Y.Z.tar.gz/.zip (installable package), apimgr-policy-debugger-X.Y.Z-src.tar.gz/.zip
+# (full source of the tagged commit) and SHA256SUMS.
 # Manual runs (workflow_dispatch) only build the packages and keep them as a workflow artifact.
 #
 # Compile-time dependency: the 24 Axway jars listed by tools/collect-build-libs.sh, stored as the asset
@@ -52,6 +53,8 @@ jobs:
         run: |
           cat dist/SHA256SUMS
           tar -tzf "dist/apimgr-policy-debugger-${{ steps.version.outputs.version }}.tar.gz"
+          echo "--- source archive"
+          tar -tzf "dist/apimgr-policy-debugger-${{ steps.version.outputs.version }}-src.tar.gz"
 
       - uses: actions/upload-artifact@v7
         with:
@@ -66,5 +69,7 @@ jobs:
         run: |
           V=${{ steps.version.outputs.version }}
           gh release create "$GITHUB_REF_NAME" \
-            "dist/apimgr-policy-debugger-$V.tar.gz" "dist/apimgr-policy-debugger-$V.zip" dist/SHA256SUMS \
+            "dist/apimgr-policy-debugger-$V.tar.gz" "dist/apimgr-policy-debugger-$V.zip" \
+            "dist/apimgr-policy-debugger-$V-src.tar.gz" "dist/apimgr-policy-debugger-$V-src.zip" \
+            dist/SHA256SUMS \
             --title "apimgr-policy-debugger $V" --generate-notes --verify-tag

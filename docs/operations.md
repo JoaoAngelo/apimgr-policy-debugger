@@ -57,7 +57,7 @@ Workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml):
 
 | Gatilho | Resultado |
 |---|---|
-| push de tag `vX.Y.Z` | compila, empacota e publica a release `vX.Y.Z` com `apimgr-policy-debugger-X.Y.Z.tar.gz`, `.zip` e `SHA256SUMS` (notas geradas dos commits) |
+| push de tag `vX.Y.Z` | compila, empacota e publica a release `vX.Y.Z` com o pacote instalável (`apimgr-policy-debugger-X.Y.Z.tar.gz`/`.zip`), o código-fonte do commit (`-src.tar.gz`/`-src.zip`, via `git archive`) e `SHA256SUMS` (notas geradas dos commits) |
 | `workflow_dispatch` (manual) | só compila e empacota; pacotes ficam como *artifact* da execução |
 
 - A tag precisa ser igual a `v` + `VERSION` de `src/apd/Main.java` (o job falha se divergir).

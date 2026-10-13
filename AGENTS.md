@@ -90,8 +90,8 @@ Tomou uma decisão estrutural? Nova entrada em `docs/decisions.md`. Resolveu uma
 
 ## Releases
 
-GitHub Actions (`.github/workflows/release.yml`): tag `vX.Y.Z` = `VERSION` → release com `.tar.gz`, `.zip`,
-`SHA256SUMS`. Corte com `sh tools/release.sh X.Y.Z`. O runner compila com os 24 jars do asset
+GitHub Actions (`.github/workflows/release.yml`): tag `vX.Y.Z` = `VERSION` → release com pacote
+`.tar.gz`/`.zip`, fonte `-src.tar.gz`/`-src.zip` (`git archive`, gerado pelo `package.sh`) e `SHA256SUMS`. Corte com `sh tools/release.sh X.Y.Z`. O runner compila com os 24 jars do asset
 `apd-build-libs.tar.gz` (pre-release `build-deps`); **se mudar imports de classes Axway**, rode
 `sh tools/collect-build-libs.sh` e `gh release upload build-deps dist/apd-build-libs.tar.gz --clobber`.
 Validação local do pipeline: `sh probes/ci_local_check.sh`. Detalhes: docs/operations.md §5.

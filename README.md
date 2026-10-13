@@ -73,12 +73,20 @@ PASS  path Default Services /heroes  status=200  116.9 ms
 
 ## Instalação
 
-Os pacotes ficam na página **Releases** do repositório (`apimgr-policy-debugger-<versão>.tar.gz` ou `.zip`,
-~120 KB, sem nada da Axway dentro, com `SHA256SUMS`):
+Cada versão na página **Releases** do repositório traz:
+
+| Asset | Conteúdo |
+|---|---|
+| `apimgr-policy-debugger-<versão>.tar.gz` / `.zip` | pacote instalável (~120 KB): CLI, jar compilado, setup, docs e exemplos — sem nada da Axway |
+| `apimgr-policy-debugger-<versão>-src.tar.gz` / `-src.zip` | código-fonte completo do commit da versão (todos os arquivos versionados) |
+| `SHA256SUMS` | checksums de todos os arquivos acima |
+
 ```sh
 gh release download --repo JoaoAngelo/apimgr-policy-debugger --pattern '*.tar.gz' --pattern SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS
 ```
+
+**A partir do código-fonte da release** (`-src`): extraia e siga como no repositório (`setup.sh` + `build.sh`).
 
 **A partir do pacote:**
 ```sh
