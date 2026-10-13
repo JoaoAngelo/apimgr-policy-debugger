@@ -258,7 +258,10 @@ public final class Main {
                     mocks.addAll(YAML.readValue(new File(mf),
                             new com.fasterxml.jackson.core.type.TypeReference<List<MockBackend.Route>>() { }));
                 }
-                Lifecycle.Result r = new Lifecycle(rt, index).run(plan, req, new File("."), trace, mocks, realRouting);
+                // relative bodyFile paths resolve against the --request file, else the working directory
+                String reqFile = a.opt("--request", null);
+                File baseDir = reqFile == null ? new File(".") : new File(reqFile).getAbsoluteFile().getParentFile();
+                Lifecycle.Result r = new Lifecycle(rt, index).run(plan, req, baseDir, trace, mocks, realRouting);
                 Report.print(r, a.flag("--json"), a.flag("--quiet"), out);
                 return r.outcome.equals("pass") ? 0 : 3;
             }
