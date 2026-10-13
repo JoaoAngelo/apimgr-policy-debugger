@@ -88,7 +88,15 @@ Mudou o ciclo de vida, roteamento ou debugger? Acrescente/atualize um caso em `e
 Achou algo novo sobre a Axway? Registre com evidência em `docs/lifecycle-contract.md` ou `docs/axway-internals.md`.
 Tomou uma decisão estrutural? Nova entrada em `docs/decisions.md`. Resolveu uma lacuna? Atualize `docs/roadmap.md`.
 
-## Armadilhas já conhecidas (resumo; detalhes em operations.md §6)
+## Releases
+
+GitHub Actions (`.github/workflows/release.yml`): tag `vX.Y.Z` = `VERSION` → release com `.tar.gz`, `.zip`,
+`SHA256SUMS`. Corte com `sh tools/release.sh X.Y.Z`. O runner compila com os 24 jars do asset
+`apd-build-libs.tar.gz` (pre-release `build-deps`); **se mudar imports de classes Axway**, rode
+`sh tools/collect-build-libs.sh` e `gh release upload build-deps dist/apd-build-libs.tar.gz --clobber`.
+Validação local do pipeline: `sh probes/ci_local_check.sh`. Detalhes: docs/operations.md §5.
+
+## Armadilhas já conhecidas (resumo; detalhes em operations.md §7)
 
 - `<ClassPath>` fora de `<JVMSettings>` no descritor do vshell é ignorado.
 - `CircuitReference` exige `PortableESPK`; referências entre stores resolvem via `store.getEntity(pk)`.

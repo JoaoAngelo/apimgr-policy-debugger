@@ -73,7 +73,14 @@ PASS  path Default Services /heroes  status=200  116.9 ms
 
 ## Instalação
 
-**A partir do pacote** (`apimgr-policy-debugger-<versão>.tar.gz`, ~100 KB, sem nada da Axway dentro):
+Os pacotes ficam na página **Releases** do repositório (`apimgr-policy-debugger-<versão>.tar.gz` ou `.zip`,
+~120 KB, sem nada da Axway dentro, com `SHA256SUMS`):
+```sh
+gh release download --repo JoaoAngelo/apimgr-policy-debugger --pattern '*.tar.gz' --pattern SHA256SUMS
+sha256sum -c --ignore-missing SHA256SUMS
+```
+
+**A partir do pacote:**
 ```sh
 tar -xzf apimgr-policy-debugger-1.0.0.tar.gz -C ~/tools
 sudo sh ~/tools/apimgr-policy-debugger-1.0.0/bin/setup.sh /caminho/Axway/apigateway   # ou o .tar.gz da Axway
@@ -352,9 +359,12 @@ Ubuntu 20.04 (WSL2), configuração QuickStart (206 policies):
 ## Desenvolvimento
 
 ```sh
-sh build.sh          # compila src/apd contra os jars do runtime → ext/lib/apimgr-policy-debugger.jar
-sh package.sh        # dist/apimgr-policy-debugger-<versão>.tar.gz
+sh build.sh                  # compila src/apd contra os jars do runtime → ext/lib/apimgr-policy-debugger.jar
+sh package.sh                # dist/apimgr-policy-debugger-<versão>.tar.gz, .zip e SHA256SUMS
+sh tools/release.sh 1.1.0    # versão + tag + push → o GitHub Actions publica a release
 ```
+Releases são geradas pelo workflow [release](.github/workflows/release.yml) a cada tag `vX.Y.Z`
+(detalhes em [docs/operations.md](docs/operations.md) §5).
 
 Verificação antes de commitar (detalhes em [docs/operations.md](docs/operations.md)):
 ```sh
@@ -374,6 +384,8 @@ apimgr-policy-debugger/
 ├─ docs/                  documentação técnica
 ├─ docker/                Dockerfile + build.sh
 ├─ probes/                scripts de investigação e verificação
+├─ tools/                 release.sh (cortar versão), collect-build-libs.sh (jars de compilação do CI)
+├─ .github/workflows/     release.yml (GitHub Actions)
 ├─ build.sh, package.sh   build e empacotamento
 └─ (fora do git) re/ código Axway descompilado · runtime/ config de exemplo · build/ dist/ ext/lib/*.jar
 ```

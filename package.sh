@@ -17,4 +17,8 @@ cp "$APD_HOME/README.md" "$STAGE/"
 find "$STAGE" -type f \( -name '*.sh' -o -name 'apimgr-policy-debugger' -o -name Dockerfile \) -exec sed -i 's/\r$//' {} +
 chmod +x "$STAGE/bin/apimgr-policy-debugger" "$STAGE/bin/setup.sh" "$STAGE/docker/build.sh"
 tar -czf "$APD_HOME/dist/$NAME.tar.gz" -C "$APD_HOME/build" "$NAME"
+rm -f "$APD_HOME/dist/$NAME.zip"
+(cd "$APD_HOME/build" && zip -qr -X "$APD_HOME/dist/$NAME.zip" "$NAME")
+(cd "$APD_HOME/dist" && sha256sum "$NAME.tar.gz" "$NAME.zip" > SHA256SUMS)
 echo "packaged dist/$NAME.tar.gz ($(du -k "$APD_HOME/dist/$NAME.tar.gz" | cut -f1) KB)"
+echo "packaged dist/$NAME.zip ($(du -k "$APD_HOME/dist/$NAME.zip" | cut -f1) KB)"

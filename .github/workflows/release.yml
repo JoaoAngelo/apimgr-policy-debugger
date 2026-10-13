@@ -1,0 +1,70 @@
+name: release
+
+# Push a tag vX.Y.Z (matching VERSION in src/apd/Main.java) to publish a GitHub release with
+# apimgr-policy-debugger-X.Y.Z.tar.gz, .zip and SHA256SUMS.
+# Manual runs (workflow_dispatch) only build the packages and keep them as a workflow artifact.
+#
+# Compile-time dependency: the 24 Axway jars listed by tools/collect-build-libs.sh, stored as the asset
+# apd-build-libs.tar.gz of the pre-release "build-deps" in this (private) repository.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Fetch Axway compile-time libraries
+        run: |
+          gh release download build-deps --pattern apd-build-libs.tar.gz --dir "$RUNNER_TEMP"
+          mkdir -p "$RUNNER_TEMP/axway"
+          tar -xzf "$RUNNER_TEMP/apd-build-libs.tar.gz" -C "$RUNNER_TEMP/axway"
+          echo "AXWAY_HOME=$RUNNER_TEMP/axway" >> "$GITHUB_ENV"
+
+      - name: Resolve version
+        id: version
+        run: |
+          VERSION=$(sed -n 's/.*VERSION = "\([^"]*\)".*/\1/p' src/apd/Main.java)
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$GITHUB_REF_NAME" != "v$VERSION" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match VERSION $VERSION in src/apd/Main.java"
+            exit 1
+          fi
+
+      - name: Build and package
+        run: sh package.sh
+
+      - name: Inspect package
+        run: |
+          cat dist/SHA256SUMS
+          tar -tzf "dist/apimgr-policy-debugger-${{ steps.version.outputs.version }}.tar.gz"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apimgr-policy-debugger-${{ steps.version.outputs.version }}
+          path: |
+            dist/apimgr-policy-debugger-*.tar.gz
+            dist/apimgr-policy-debugger-*.zip
+            dist/SHA256SUMS
+
+      - name: Publish release
+        if: github.ref_type == 'tag'
+        run: |
+          V=${{ steps.version.outputs.version }}
+          gh release create "$GITHUB_REF_NAME" \
+            "dist/apimgr-policy-debugger-$V.tar.gz" "dist/apimgr-policy-debugger-$V.zip" dist/SHA256SUMS \
+            --title "apimgr-policy-debugger $V" --generate-notes --verify-tag

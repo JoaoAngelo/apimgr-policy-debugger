@@ -51,7 +51,28 @@ bin/apimgr-policy-debugger paths --config "$CFG"   # gere comandos `run --servic
 
 Pacote: `sh package.sh` → `dist/apimgr-policy-debugger-<versão>.tar.gz`. Versão em `src/apd/Main.java` (`VERSION`).
 
-## 5. Git
+## 5. Releases (GitHub Actions)
+
+Workflow [`.github/workflows/release.yml`](../.github/workflows/release.yml):
+
+| Gatilho | Resultado |
+|---|---|
+| push de tag `vX.Y.Z` | compila, empacota e publica a release `vX.Y.Z` com `apimgr-policy-debugger-X.Y.Z.tar.gz`, `.zip` e `SHA256SUMS` (notas geradas dos commits) |
+| `workflow_dispatch` (manual) | só compila e empacota; pacotes ficam como *artifact* da execução |
+
+- A tag precisa ser igual a `v` + `VERSION` de `src/apd/Main.java` (o job falha se divergir).
+- **Cortar uma versão:** `sh tools/release.sh 1.1.0` (ajusta `VERSION`, commita, cria a tag e dá push).
+- **Dependência de compilação:** o runner não tem a Axway. Os 24 jars necessários para compilar (calculados por
+  `tools/collect-build-libs.sh`, ~10 MB) ficam no asset `apd-build-libs.tar.gz` da pre-release técnica
+  `build-deps` deste repositório. Ao mudar imports ou atualizar a versão da Axway, regenere e substitua:
+  ```sh
+  sh tools/collect-build-libs.sh                       # gera dist/apd-build-libs.tar.gz a partir de AXWAY_HOME
+  gh release upload build-deps dist/apd-build-libs.tar.gz --clobber
+  ```
+- O CI não executa os testes (precisariam do runtime completo com JNI e de uma configuração). Reproduza o CI
+  localmente e rode os testes do pacote gerado com `sh probes/ci_local_check.sh`.
+
+## 6. Git
 
 - Opere o git **de dentro do Linux/WSL**: o repositório tem `core.fileMode=false`, `core.autocrlf=false` e
   `.gitattributes` com `eol=lf`. Scripts executáveis: `bin/apimgr-policy-debugger`, `bin/setup.sh`, `build.sh`,
@@ -59,7 +80,7 @@ Pacote: `sh package.sh` → `dist/apimgr-policy-debugger-<versão>.tar.gz`. Vers
 - Fora do git: `re/` (descompilado), `runtime/` (config QuickStart), `build/`, `dist/`, `ext/lib/*.jar`,
   `conf/runtime.env`, `conf/kps/`, `conf/tmp/`.
 
-## 6. Problemas conhecidos e soluções
+## 7. Problemas conhecidos e soluções
 
 | Sintoma | Causa | Solução |
 |---|---|---|
@@ -76,7 +97,7 @@ Pacote: `sh package.sh` → `dist/apimgr-policy-debugger-<versão>.tar.gz`. Vers
 | boot lento (~20 s) | runtime em `/mnt/<drive>` (9p) | runtime no filesystem Linux (`/opt/axway/apigateway`) |
 | Git Bash no Windows altera `/mnt/...` em comandos `wsl` | conversão de path do MSYS | `MSYS_NO_PATHCONV=1` ou rodar direto no WSL |
 
-## 7. Probes (investigação)
+## 8. Probes (investigação)
 
 | Script | Para quê |
 |---|---|

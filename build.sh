@@ -15,7 +15,13 @@ command -v javac >/dev/null || { echo "build: javac not found (install a JDK >= 
 OUT="$APD_HOME/build/classes"
 rm -rf "$OUT"
 mkdir -p "$OUT" "$APD_HOME/ext/lib"
-CP=$(find "$LIB" "$LIB/plugins" "$LIB/modules" "$LIB/jce" "$AXWAY_HOME/Linux.x86_64/java" -maxdepth 1 -name '*.jar' | tr '\n' ':')
+# works with a full runtime or with the compile-only subset (tools/collect-build-libs.sh)
+DIRS=""
+for d in "$LIB" "$LIB/plugins" "$LIB/modules" "$LIB/jce" "$AXWAY_HOME/Linux.x86_64/java"; do
+    [ -d "$d" ] && DIRS="$DIRS $d"
+done
+# shellcheck disable=SC2086
+CP=$(find $DIRS -maxdepth 1 -name '*.jar' | tr '\n' ':')
 find "$APD_HOME/src" -name '*.java' > "$APD_HOME/build/sources.txt"
 javac --release 11 -encoding UTF-8 -nowarn -cp "$CP" -d "$OUT" @"$APD_HOME/build/sources.txt"
 jar --create --file "$APD_HOME/ext/lib/apimgr-policy-debugger.jar" -C "$OUT" .
